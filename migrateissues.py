@@ -264,7 +264,7 @@ def process_gcode_issues(existing_issues):
     """ Migrates all Google Code issues in the given dictionary to Github. """
 
     issues = get_gcode_issues()
-    previous_gid = 1
+    previous_gid = 0
 
     for issue in issues:
         issue = get_gcode_issue(issue)
