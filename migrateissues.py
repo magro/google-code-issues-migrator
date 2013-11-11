@@ -159,6 +159,8 @@ def get_gcode_issue(issue_summary):
         'status': issue_summary['Status'].lower()
     }
 
+    output('Loading issue %d\n' % issue['gid'])
+
     # Build a list of labels to apply to the new issue, including an 'imported' tag that
     # we can use to identify this issue as one that's passed through migration.
     labels = ['imported']
@@ -195,7 +197,12 @@ def get_gcode_issue(issue_summary):
                 text = '...' + text
             issue['comments'].append(comment.copy())
 
-    split_comment(issue, description('pre').text())
+    # Reads ('pre').html() from the given pyquery and removes the surrounding pre tag.
+    # Is used instead of text() because text() looses all formatting...
+    def pre_innerhtml(doc):
+        return doc('pre').html().strip().replace('<pre>', '').replace('</pre>', '')
+
+    split_comment(issue, pre_innerhtml(description))
     issue['content'] = u'_From {author} on {date:%B %d, %Y %H:%M:%S}_\n\n{content}{attachments}\n\n{footer}'.format(
             content = issue['comments'].pop(0)['body'],
             footer = GOOGLE_ISSUE_TEMPLATE.format(GOOGLE_URL.format(google_project_name, issue['gid'])),
@@ -211,7 +218,7 @@ def get_gcode_issue(issue_summary):
             continue # Skip deleted comments
 
         date = parse_gcode_date(comment('.date').attr('title'))
-        body = comment('pre').text()
+        body = pre_innerhtml(comment)
         author = get_author(comment)
 
         updates = comment('.updates .box-inner')
