@@ -197,10 +197,21 @@ def get_gcode_issue(issue_summary):
                 text = '...' + text
             issue['comments'].append(comment.copy())
 
+    # Gets the anchor url to the comment
+    def get_comment_link(comment):
+        comment_link_name = comment('.author a[name]').attr('name')
+        return GOOGLE_URL.format(google_project_name, issue['gid']) + '#' + comment_link_name
+
     # Reads ('pre').html() from the given pyquery and removes the surrounding pre tag.
     # Is used instead of text() because text() looses all formatting...
+    # Additionally handles UnicodeDecodeError which was needed to process
+    # http://code.google.com/p/kryo/issues/detail?id=79#c2
     def pre_innerhtml(doc):
-        return doc('pre').html().strip().replace('<pre>', '').replace('</pre>', '')
+        try:
+            return doc('pre').html().strip().replace('<pre>', '').replace('</pre>', '')
+        except UnicodeDecodeError:
+            output('Caught UnicodeDecodeError for issue %d\n' % issue['gid'])
+            return '<em>Could not decode text, please check the <a href="%s">original issue comment</a>!</em>' % get_comment_link(doc)
 
     split_comment(issue, pre_innerhtml(description))
     issue['content'] = u'_From {author} on {date:%B %d, %Y %H:%M:%S}_\n\n{content}{attachments}\n\n{footer}'.format(
